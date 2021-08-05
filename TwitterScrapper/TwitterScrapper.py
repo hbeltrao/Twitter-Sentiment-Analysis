@@ -3,10 +3,9 @@ import tweepy
 import datetime
 import pandas as pd
 import psycopg2
-from csv import writer
 
 
-
+##### Function to estabilish connection to twiter API
 def create_API ():
     authenticator = tweepy.OAuthHandler(TWITTER_CONSUMER_KEY, TWITTER_CONSUMER_SECRET)
     authenticator.set_access_token(TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET)
@@ -14,8 +13,8 @@ def create_API ():
     return api
 
 
-
-def execute_query(method, start_time, end_time, query):
+#### Function to execute a query into the twitter API, the method is refered to the tweepy query methods such as search,  user_timeline etc
+def execute_query(method, start_time, end_time, query=""):
     query2 = query + " since:" + str(start_time) + " until:" + str(end_time)
     print("Exectuting query")
     tweet_list = tweepy.Cursor(method, q=query2, tweet_mode='extended', place_country='BR').items()
@@ -23,6 +22,8 @@ def execute_query(method, start_time, end_time, query):
     return tweet_list
 
 
+#### Function to organize the data extracted from the twitter API, the raw data is a JSON with a lot of information, this function selects only
+#### the necessary data for the future use
 def organize_query(query):
     output_data = []
     for tweet in query:
@@ -36,7 +37,7 @@ def organize_query(query):
     return output_data
 
 
-
+#### Function used to save the twitter data into a csv file, the data is added cumulatively
 def update_into_csv(data, path):
     print("\nUpdating data into csv")
     dataset = pd.DataFrame(data)
@@ -45,6 +46,7 @@ def update_into_csv(data, path):
     print("\nUpdate Complete")
 
 
+#### Function to connect to the PostgreSQL database and save the data scrapped into a table of this database
 def save_into_db():
     print("\nConnecting to database")
     conn = psycopg2.connect(host=SQL_HOST, database=SQL_DATABASE,
@@ -60,6 +62,8 @@ def save_into_db():
     conn.commit()
     print("\nQuery finished")
 
+
+#### main function
 def main():
     today = datetime.date.today()
     yesterday= today - datetime.timedelta(days=2)
@@ -71,6 +75,7 @@ def main():
     data = organize_query(tweet_list)
     update_into_csv(data, path)
     save_into_db()
+
 
 
 if __name__ == '__main__':
